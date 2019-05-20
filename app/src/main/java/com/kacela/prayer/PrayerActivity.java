@@ -3,21 +3,27 @@ package com.kacela.prayer;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
+import com.kacela.prayer.model.CurrentDate;
 import com.kacela.prayer.model.Hijri;
 import com.kacela.prayer.model.HijriData;
 import com.kacela.prayer.model.Items;
 import com.kacela.prayer.model.Prayer;
 import com.kacela.prayer.model.PrayerData;
+import com.kacela.prayer.remote.IDateService;
 import com.kacela.prayer.remote.IHijriService;
 import com.kacela.prayer.remote.IPrayerService;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -29,6 +35,7 @@ public class PrayerActivity extends AppCompatActivity {
 
     IPrayerService iPrayerService;
     IHijriService iHijriService;
+    IDateService iDateService;
     TextView fajr, shurooq, duhr, asr, maghrib, isha;
     TextView nextP, timeR;
     TextView dayAr, monthAr, yearAr;
@@ -49,6 +56,7 @@ public class PrayerActivity extends AppCompatActivity {
 
         iPrayerService = Common.getPrayerService();
         iHijriService = Common.getHijriService();
+        iDateService = Common.getDateService();
         fajr = findViewById(R.id.fajrTxt);
         shurooq = findViewById(R.id.shurooqTxt);
         duhr = findViewById(R.id.duhrTxt);
@@ -79,8 +87,7 @@ public class PrayerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<HijriData> call, Throwable t) {
-
-                System.out.print(t.getMessage());
+                Log.e("iHijriService", t.getMessage());
             }
         });
 
@@ -88,29 +95,72 @@ public class PrayerActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Prayer> call, Response<Prayer> response) {
                 Items prayer = response.body().getItems()[0];
+                String timezone = response.body().getTimezone();
 
-                fillTexts(prayer);
-
-                convertItToDate(prayer);
+                fillTexts(prayer, timezone);
             }
 
             @Override
             public void onFailure(Call<Prayer> call, Throwable t) {
-                System.out.println(t.getMessage());
+                Log.e("iPrayerService", t.getMessage());
             }
         });
     }
 
-    private void fillTexts(Items prayer) {
-        fajr.setText(prayer.getFajr());
-        shurooq.setText(prayer.getShurooq());
-        duhr.setText(prayer.getDhuhr());
-        asr.setText(prayer.getAsr());
-        maghrib.setText(prayer.getMaghrib());
-        isha.setText(prayer.getIsha());
+    private void fillTexts(final Items prayer, final String timezone) {
+        String timeZId = Calendar.getInstance().getTimeZone().getID();
+        iDateService.getDate(timeZId).enqueue(new Callback<CurrentDate>() {
+            @Override
+            public void onResponse(Call<CurrentDate> call, Response<CurrentDate> response) {
+                String timeZ = response.body().getUtcOffset();
+                int diff = timeZoneDiff(timeZ, timezone);
+
+                fajr.setText(getTime(prayer.getFajr(), diff));
+                shurooq.setText(getTime(prayer.getShurooq(), diff));
+                duhr.setText(getTime(prayer.getDhuhr(), diff));
+                asr.setText(getTime(prayer.getAsr(), diff));
+                maghrib.setText(getTime(prayer.getMaghrib(), diff));
+                isha.setText(getTime(prayer.getIsha(), diff));
+
+                convertItToDate(prayer, diff);
+            }
+
+            @Override
+            public void onFailure(Call<CurrentDate> call, Throwable t) {
+                Log.e("iDateService", t.getMessage());
+            }
+        });
     }
 
-    private void convertItToDate(Items prayer) {
+    private String getTime(String time, int diff) {
+        try {
+            Calendar cal = Calendar.getInstance();
+            DateFormat format = new SimpleDateFormat("hh:ss a", Locale.ENGLISH);
+            Date d = format.parse(time);
+            cal.setTime(d);
+            cal.add(Calendar.HOUR, diff);
+            Date oneHourBack = cal.getTime();
+            DateFormat format24 = new SimpleDateFormat("HH:ss", Locale.ENGLISH);
+            return format24.format(oneHourBack);
+        } catch (Exception e) {
+            Log.e("getTime", e.getMessage());
+        }
+        return "00:00";
+    }
+
+    private int timeZoneDiff(String timezone, String time) {
+        char signal = timezone.charAt(0);
+        String timeFull = timezone.substring(1);
+        String[] parts = timeFull.split(":");
+        int timeZ = Integer.parseInt(parts[0]);
+        if (signal == '-') {
+            timeZ *= -1;
+        }
+
+        return timeZ - Integer.parseInt(time);
+    }
+
+    private void convertItToDate(Items prayer, int diff) {
         String strFajrDate = prayer.getFajr();
         String strShurooqDate = prayer.getShurooq();
         String strDuhrDate = prayer.getDhuhr();
@@ -122,12 +172,12 @@ public class PrayerActivity extends AppCompatActivity {
         p.setIntTime(nowInMinutes);
 
         PrayerData[] tabPrayerDataDate = {
-            new PrayerData("Fajr", strFajrDate),
-            new PrayerData("Shurooq", strShurooqDate),
-            new PrayerData("Duhr", strDuhrDate),
-            new PrayerData("Asr", strAsrDate),
-            new PrayerData("Maghrib", strMaghribDate),
-            new PrayerData("Isha", strIshaDate),
+            new PrayerData("Fajr", getTime(strFajrDate, diff)),
+            new PrayerData("Shurooq", getTime(strShurooqDate, diff)),
+            new PrayerData("Duhr", getTime(strDuhrDate, diff)),
+            new PrayerData("Asr", getTime(strAsrDate, diff)),
+            new PrayerData("Maghrib", getTime(strMaghribDate, diff)),
+            new PrayerData("Isha", getTime(strIshaDate, diff)),
             p
         };
 

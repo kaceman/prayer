@@ -34,6 +34,10 @@ public class Prayer
         return today_weather;
     }
 
+    public String getTimezone() {
+        return timezone;
+    }
+
     @Override
     public String toString() {
         return "Prayer{" +
