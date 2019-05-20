@@ -67,7 +67,6 @@ public class PrayerActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<HijriData> call, Response<HijriData> response) {
 
-                System.out.println("I AM HERE BITCH");
                 Hijri h = response.body().getData().getHijri();
                 String month = h.getMonth().getAr();
                 String day = h.getDay();
@@ -81,7 +80,6 @@ public class PrayerActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<HijriData> call, Throwable t) {
 
-                System.out.println("I AM NOT HERE BITCH");
                 System.out.print(t.getMessage());
             }
         });
@@ -98,7 +96,6 @@ public class PrayerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Prayer> call, Throwable t) {
-                System.out.println("NO I AM HERE");
                 System.out.println(t.getMessage());
             }
         });
@@ -144,8 +141,6 @@ public class PrayerActivity extends AppCompatActivity {
                 return Integer.compare(t1.getIntTime(), t2.getIntTime());
             }
         });
-
-//        System.out.println(Arrays.toString(tabPrayerDataDate));
 
         int indexOfNow = Arrays.asList(tabPrayerDataDate).indexOf(p);
 
