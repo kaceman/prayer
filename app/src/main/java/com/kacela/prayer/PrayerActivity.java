@@ -1,10 +1,22 @@
 package com.kacela.prayer;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.kacela.prayer.model.CurrentDate;
@@ -17,12 +29,14 @@ import com.kacela.prayer.remote.IDateService;
 import com.kacela.prayer.remote.IHijriService;
 import com.kacela.prayer.remote.IPrayerService;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import retrofit2.Call;
@@ -30,6 +44,10 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class PrayerActivity extends AppCompatActivity {
+
+
+    private LocationManager locationManager;
+    private LocationListener listener;
 
     int nowInMinutes;
 
@@ -40,19 +58,14 @@ public class PrayerActivity extends AppCompatActivity {
     TextView nextP, timeR;
     TextView dayAr, monthAr, yearAr;
 
+    TextView city_text;
+    ImageButton refresh_btn, location_btn;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prayer);
 
-        Date nowDate = new Date();
-        int nowHours = nowDate.getHours();
-        int nowMinutes = nowDate.getMinutes();
-
-        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
-        String todayDate = df.format(nowDate);
-
-        nowInMinutes = nowHours * 60 + nowMinutes;
 
         iPrayerService = Common.getPrayerService();
         iHijriService = Common.getHijriService();
@@ -71,40 +84,42 @@ public class PrayerActivity extends AppCompatActivity {
         monthAr = findViewById(R.id.monthArTxt);
         yearAr = findViewById(R.id.yearArTxt);
 
-        iHijriService.getHijri(todayDate).enqueue(new Callback<HijriData>() {
+        city_text = findViewById(R.id.city_text);
+        refresh_btn = findViewById(R.id.refresh_button);
+        location_btn = findViewById(R.id.location_button);
+
+
+
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        listener = new LocationListener() {
             @Override
-            public void onResponse(Call<HijriData> call, Response<HijriData> response) {
-
-                Hijri h = response.body().getData().getHijri();
-                String month = h.getMonth().getAr();
-                String day = h.getDay();
-                String year = h.getYear();
-
-                dayAr.setText(day);
-                monthAr.setText(month);
-                yearAr.setText(year);
+            public void onLocationChanged(Location location) {
+                Log.i("Location", location.getLatitude() + ", " + location.getLongitude());
+                fetch_data(location);
+                locationManager.removeUpdates(listener);
             }
 
             @Override
-            public void onFailure(Call<HijriData> call, Throwable t) {
-                Log.e("iHijriService", t.getMessage());
-            }
-        });
+            public void onStatusChanged(String s, int i, Bundle bundle) {
 
-        iPrayerService.getPrayer("oujda").enqueue(new Callback<Prayer>() {
-            @Override
-            public void onResponse(Call<Prayer> call, Response<Prayer> response) {
-                Items prayer = response.body().getItems()[0];
-                String timezone = response.body().getTimezone();
-
-                fillTexts(prayer, timezone);
             }
 
             @Override
-            public void onFailure(Call<Prayer> call, Throwable t) {
-                Log.e("iPrayerService", t.getMessage());
+            public void onProviderEnabled(String s) {
+
             }
-        });
+
+            @Override
+            public void onProviderDisabled(String s) {
+                Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(i);
+            }
+        };
+
+        configure_button();
+
+        fetch_location();
     }
 
     private void fillTexts(final Items prayer, final String timezone) {
@@ -172,13 +187,13 @@ public class PrayerActivity extends AppCompatActivity {
         p.setIntTime(nowInMinutes);
 
         PrayerData[] tabPrayerDataDate = {
-            new PrayerData("Fajr", getTime(strFajrDate, diff)),
-            new PrayerData("Shurooq", getTime(strShurooqDate, diff)),
-            new PrayerData("Duhr", getTime(strDuhrDate, diff)),
-            new PrayerData("Asr", getTime(strAsrDate, diff)),
-            new PrayerData("Maghrib", getTime(strMaghribDate, diff)),
-            new PrayerData("Isha", getTime(strIshaDate, diff)),
-            p
+                new PrayerData("Fajr", getTime(strFajrDate, diff)),
+                new PrayerData("Shurooq", getTime(strShurooqDate, diff)),
+                new PrayerData("Duhr", getTime(strDuhrDate, diff)),
+                new PrayerData("Asr", getTime(strAsrDate, diff)),
+                new PrayerData("Maghrib", getTime(strMaghribDate, diff)),
+                new PrayerData("Isha", getTime(strIshaDate, diff)),
+                p
         };
 
         displayNextPrayer(tabPrayerDataDate, p);
@@ -216,5 +231,94 @@ public class PrayerActivity extends AppCompatActivity {
         String strHours = hours < 10 ? "0" + hours : String.valueOf(hours);
         String strMinutes = minutes < 10 ? "0" + minutes : String.valueOf(minutes);
         return strHours + ":" + strMinutes;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 10:
+                configure_button(); break;
+            default:
+                break;
+        }
+    }
+
+    void configure_button() {
+
+        location_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                fetch_location();
+            }
+        });
+    }
+
+    void fetch_location() {
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET}
+                        , 10);
+            }
+            return;
+        }
+        locationManager.requestLocationUpdates("gps", 5000, 0, listener);
+    }
+
+    void fetch_data(Location location) {
+        Date nowDate = new Date();
+        int nowHours = nowDate.getHours();
+        int nowMinutes = nowDate.getMinutes();
+
+        DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+        String todayDate = df.format(nowDate);
+
+        nowInMinutes = nowHours * 60 + nowMinutes;
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
+        try {
+            addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            String cityName = addresses.get(0).getLocality();
+
+            city_text.setText(cityName);
+
+            iPrayerService.getPrayer(cityName).enqueue(new Callback<Prayer>() {
+                @Override
+                public void onResponse(Call<Prayer> call, Response<Prayer> response) {
+                    Items prayer = response.body().getItems()[0];
+                    String timezone = response.body().getTimezone();
+
+                    fillTexts(prayer, timezone);
+                }
+
+                @Override
+                public void onFailure(Call<Prayer> call, Throwable t) {
+                    Log.e("iPrayerService", t.getMessage());
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        iHijriService.getHijri(todayDate).enqueue(new Callback<HijriData>() {
+            @Override
+            public void onResponse(Call<HijriData> call, Response<HijriData> response) {
+
+                Hijri h = response.body().getData().getHijri();
+                String month = h.getMonth().getAr();
+                String day = h.getDay();
+                String year = h.getYear();
+
+                dayAr.setText(day);
+                monthAr.setText(month);
+                yearAr.setText(year);
+            }
+
+            @Override
+            public void onFailure(Call<HijriData> call, Throwable t) {
+                Log.e("iHijriService", t.getMessage());
+            }
+        });
     }
 }

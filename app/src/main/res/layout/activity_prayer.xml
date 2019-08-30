@@ -24,8 +24,8 @@
         android:id="@+id/timeRTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="@font/lato_thin"
         android:text="--:--"
         android:textAlignment="textStart"
@@ -39,8 +39,8 @@
         android:id="@+id/nextPTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="@font/lato_thin"
         android:text="-"
         android:textAlignment="textStart"
@@ -54,8 +54,8 @@
         android:id="@+id/dayArTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="@font/lato_thin"
         android:textAlignment="textStart"
         android:textColor="@android:color/white"
@@ -68,8 +68,8 @@
         android:id="@+id/yearArTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="@font/lato_thin"
         android:textAlignment="textStart"
         android:textColor="@android:color/white"
@@ -82,8 +82,8 @@
         android:id="@+id/monthArTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="@font/lato_thin"
         android:textAlignment="textStart"
         android:textColor="@android:color/white"
@@ -96,8 +96,8 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="@font/lato_thin"
         android:text="Next Prayer"
         android:textAlignment="textStart"
@@ -106,6 +106,21 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/nextPTxt"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/city_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/lato_thin"
+        android:text="-"
+        android:textAlignment="textStart"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/location_button"
+        app:layout_constraintStart_toEndOf="@+id/refresh_button"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guideline"
@@ -117,9 +132,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="275dp"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
         android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
         android:background="@drawable/shape1"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -412,4 +427,27 @@
                 android:textSize="18sp" />
         </LinearLayout>
     </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/location_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@android:drawable/ic_menu_mylocation" />
+
+    <ImageButton
+        android:id="@+id/refresh_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@android:drawable/ic_menu_rotate" />
+
 </android.support.constraint.ConstraintLayout>
