@@ -59,7 +59,7 @@ public class PrayerActivity extends AppCompatActivity {
     TextView dayAr, monthAr, yearAr;
 
     TextView city_text;
-    ImageButton refresh_btn, location_btn;
+    ImageButton location_btn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +85,6 @@ public class PrayerActivity extends AppCompatActivity {
         yearAr = findViewById(R.id.yearArTxt);
 
         city_text = findViewById(R.id.city_text);
-        refresh_btn = findViewById(R.id.refresh_button);
         location_btn = findViewById(R.id.location_button);
 
 
