@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.kacela.prayer.model.CurrentDate;
@@ -61,6 +62,8 @@ public class PrayerActivity extends AppCompatActivity {
     TextView city_text;
     ImageButton location_btn;
 
+    ProgressBar progressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,7 +90,7 @@ public class PrayerActivity extends AppCompatActivity {
         city_text = findViewById(R.id.city_text);
         location_btn = findViewById(R.id.location_button);
 
-
+        progressBar = findViewById(R.id.progressBar);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -253,6 +256,7 @@ public class PrayerActivity extends AppCompatActivity {
     }
 
     void fetch_location() {
+        progressBar.setVisibility(View.VISIBLE);
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET}
@@ -288,6 +292,8 @@ public class PrayerActivity extends AppCompatActivity {
                     String timezone = response.body().getTimezone();
 
                     fillTexts(prayer, timezone);
+
+                    progressBar.setVisibility(View.INVISIBLE);
                 }
 
                 @Override
@@ -312,6 +318,8 @@ public class PrayerActivity extends AppCompatActivity {
                 dayAr.setText(day);
                 monthAr.setText(month);
                 yearAr.setText(year);
+
+                progressBar.setVisibility(View.INVISIBLE);
             }
 
             @Override
